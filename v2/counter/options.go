@@ -61,6 +61,7 @@ func (c *counter) startCountWorker(path, substr string) (int, error) {
 // Adds a task to the counter
 func (c *counter) Count(path, substr string) {
 	c.wg.Add(1)
+	c.jobs++
 	go func() {
 		c.limiter <- struct{}{}
 		defer func() {
@@ -82,6 +83,7 @@ func (c *counter) Count(path, substr string) {
 func (c *counter) GetTotal() int64 {
 	defer func() {
 		c.total = 0
+		c.jobs = 0
 		for {
 			select {
 			case <-c.counts:
@@ -97,6 +99,10 @@ func (c *counter) GetTotal() int64 {
 
 // Gets {path, count} in order of channel receiving
 func (c *counter) GetCount() (string, int) {
+	if c.jobs == 0 {
+		return "", 0
+	}
+	c.jobs--
 	counted := <-c.counts
 	return counted.path, counted.count
 }

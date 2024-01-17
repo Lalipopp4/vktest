@@ -8,6 +8,7 @@ import (
 
 type counter struct {
 	k       int
+	jobs    int
 	total   int64
 	wg      sync.WaitGroup
 	limiter chan struct{}
@@ -18,6 +19,7 @@ type counter struct {
 func New(k int) Counter {
 	return &counter{
 		k,
+		0,
 		0,
 		sync.WaitGroup{},
 		make(chan struct{}, k),

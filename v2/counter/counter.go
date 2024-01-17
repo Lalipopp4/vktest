@@ -9,6 +9,6 @@ type Counter interface {
 	// Gets total count and resets counter
 	GetTotal() int64
 
-	// Gets {path, count} in order of channel receiving (can block goroutine if called too many times)
+	// Gets {path, count} in order of channel receiving (receives empty if called more than got counts)
 	GetCount() (string, int)
 }
