@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 type counted struct {
@@ -79,7 +80,17 @@ func (c *counter) Count(path, substr string) {
 
 // Gets total count and resets counter
 func (c *counter) GetTotal() int64 {
-	defer func() { c.total = 0 }()
+	defer func() {
+		c.total = 0
+		for {
+			select {
+			case <-c.counts:
+				time.Sleep(time.Millisecond * 10)
+			default:
+				return
+			}
+		}
+	}()
 	c.wg.Wait()
 	return c.total
 }
