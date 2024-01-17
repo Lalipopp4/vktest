@@ -35,17 +35,13 @@ func (c *counter) count(source, substr string, data io.Reader) int {
 
 // Starts counting worker
 func (c *counter) startCountWorker(path, substr string) (int, error) {
-	var count int
-
 	if isURL(path) {
 		resp, err := http.Get(path)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get data from %s (%v)", path, err)
 		}
 		defer resp.Body.Close()
-		count = c.count(path, substr, resp.Body)
-		c.incTotal(count)
-		return count, nil
+		return c.count(path, substr, resp.Body), nil
 	}
 
 	file, err := os.Open(path)
@@ -53,9 +49,7 @@ func (c *counter) startCountWorker(path, substr string) (int, error) {
 		return 0, fmt.Errorf("failed to open %s (%v)", path, err)
 	}
 	defer file.Close()
-	count = c.count(path, substr, file)
-	c.incTotal(count)
-	return count, nil
+	return c.count(path, substr, file), nil
 }
 
 // Adds a task to the counter
@@ -70,6 +64,7 @@ func (c *counter) Count(path, substr string) {
 			slog.Error(err.Error())
 			return
 		}
+		c.incTotal(count)
 		fmt.Printf("Count for %s: %d\n", path, count)
 	}()
 }
