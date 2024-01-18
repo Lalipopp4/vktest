@@ -68,7 +68,6 @@ func (c *counter) Count(path, substr string) {
 			c.wg.Done()
 			<-c.limiter
 		}()
-		c.startCountWorker(path, substr)
 		count, err := c.startCountWorker(path, substr)
 		defer func() { go func() { c.counts <- counted{path, count} }() }()
 		if err != nil {
