@@ -58,17 +58,21 @@ func (c *counter) startCountWorker(path, substr string) (int, error) {
 	return c.count(path, substr, file), nil
 }
 
-// Adds a task to the counter
-func (c *counter) Count(path, substr string) {
+// Adds job
+func (c *counter) addJob() {
 	c.wg.Add(1)
 	c.jobs++
+}
+
+// Adds a task to the counter
+func (c *counter) Count(path, substr string) {
+	c.addJob()
 	go func() {
 		c.limiter <- struct{}{}
 		defer func() {
 			c.wg.Done()
 			<-c.limiter
 		}()
-		c.startCountWorker(path, substr)
 		count, err := c.startCountWorker(path, substr)
 		defer func() { go func() { c.counts <- counted{path, count} }() }()
 		if err != nil {
@@ -87,8 +91,7 @@ func (c *counter) GetTotal() int64 {
 		for {
 			select {
 			case <-c.counts:
-				time.Sleep(time.Millisecond * 10)
-			default:
+			case <-time.After(time.Millisecond):
 				return
 			}
 		}
