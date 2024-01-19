@@ -28,7 +28,7 @@ func (c *counter) incTotal(delta int) {
 }
 
 // Counts instances of substring in given reader
-func (c *counter) count(path, substr string, data io.Reader) int {
+func (c *counter) count(substr string, data io.Reader) int {
 	var (
 		count   int
 		scanner = bufio.NewScanner(data)
@@ -47,7 +47,7 @@ func (c *counter) startCountWorker(path, substr string) (int, error) {
 			return 0, fmt.Errorf("failed to get data from %s (%v)", path, err)
 		}
 		defer resp.Body.Close()
-		return c.count(path, substr, resp.Body), nil
+		return c.count(substr, resp.Body), nil
 	}
 
 	file, err := os.Open(path)
@@ -55,7 +55,7 @@ func (c *counter) startCountWorker(path, substr string) (int, error) {
 		return 0, fmt.Errorf("failed to open %s (%v)", path, err)
 	}
 	defer file.Close()
-	return c.count(path, substr, file), nil
+	return c.count(substr, file), nil
 }
 
 // Adds job
