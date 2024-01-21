@@ -80,9 +80,9 @@ func (c *counter) addJob() {
 func (c *counter) Count(path, substr string) {
 	c.addJob()
 	go func() {
-		defer c.panicRecovery(path)
 		c.limiter <- struct{}{}
 		defer func() {
+			c.panicRecovery(path)
 			c.wg.Done()
 			<-c.limiter
 		}()
