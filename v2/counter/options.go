@@ -4,13 +4,20 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
-	"net/http"
 	"os"
 	"strings"
 	"sync/atomic"
 	"time"
 )
+
+func (c *counter) panicRecovery(path string) {
+	if r := recover(); r != nil {
+		log.Printf("Panic catched on %s ecovered with error: %v", path, r)
+		c.counts <- counted{path, 0}
+	}
+}
 
 type counted struct {
 	path  string
@@ -41,21 +48,26 @@ func (c *counter) count(substr string, data io.Reader) int {
 
 // Starts counting worker
 func (c *counter) startCountWorker(path, substr string) (int, error) {
-	if isURL(path) {
-		resp, err := http.Get(path)
+	var data io.Reader
+
+	switch {
+	case isURL(path):
+		resp, err := c.client.Get(path)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get data from %s (%v)", path, err)
 		}
+		data = resp.Body
 		defer resp.Body.Close()
-		return c.count(substr, resp.Body), nil
+	default:
+		file, err := os.Open(path)
+		if err != nil {
+			return 0, fmt.Errorf("failed to open %s (%v)", path, err)
+		}
+		data = file
+		defer file.Close()
 	}
 
-	file, err := os.Open(path)
-	if err != nil {
-		return 0, fmt.Errorf("failed to open %s (%v)", path, err)
-	}
-	defer file.Close()
-	return c.count(substr, file), nil
+	return c.count(substr, data), nil
 }
 
 // Adds job
@@ -68,6 +80,7 @@ func (c *counter) addJob() {
 func (c *counter) Count(path, substr string) {
 	c.addJob()
 	go func() {
+		defer c.panicRecovery(path)
 		c.limiter <- struct{}{}
 		defer func() {
 			c.wg.Done()

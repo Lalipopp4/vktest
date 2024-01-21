@@ -3,7 +3,9 @@
 package counter
 
 import (
+	"net/http"
 	"sync"
+	"time"
 )
 
 type counter struct {
@@ -13,6 +15,7 @@ type counter struct {
 	wg      sync.WaitGroup
 	limiter chan struct{}
 	counts  chan counted
+	client  http.Client
 }
 
 // Inits the counter
@@ -24,5 +27,8 @@ func New(k int) Counter {
 		sync.WaitGroup{},
 		make(chan struct{}, k),
 		make(chan counted),
+		http.Client{
+			Timeout: 5 * time.Second,
+		},
 	}
 }
