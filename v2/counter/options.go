@@ -49,7 +49,7 @@ func (c *counter) count(substr string, data io.Reader) int {
 // Starts counting worker
 func (c *counter) startCountWorker(path, substr string) (int, error) {
 	var data io.Reader
-
+	panic(1)
 	switch {
 	case isURL(path):
 		resp, err := c.client.Get(path)
@@ -80,9 +80,9 @@ func (c *counter) addJob() {
 func (c *counter) Count(path, substr string) {
 	c.addJob()
 	go func() {
+		defer c.panicRecovery(path)
 		c.limiter <- struct{}{}
 		defer func() {
-			c.panicRecovery(path)
 			c.wg.Done()
 			<-c.limiter
 		}()
